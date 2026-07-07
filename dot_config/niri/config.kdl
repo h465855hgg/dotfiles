@@ -1,8 +1,8 @@
 include "default-base.kdl"
 
-spawn-at-startup "noctalia-watchdog"
+spawn-at-startup "/home/rrzt/.local/bin/noctalia-watchdog"
 window-rule {
-  geometry-corner-radius 20
+  geometry-corner-radius 12
   clip-to-geometry true
 }
 
