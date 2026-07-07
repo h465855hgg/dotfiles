@@ -1,0 +1,10 @@
+[ExtractDialog]
+DirHistory[$e]=$HOME/下载/
+
+[Extraction]
+closeAfterExtraction=true
+openDestinationFolderAfterExtraction=true
+
+[General]
+LockSidebar=true
+ShowSidebar=true
