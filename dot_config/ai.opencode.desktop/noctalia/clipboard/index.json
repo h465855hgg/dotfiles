@@ -1,0 +1,60 @@
+{
+  "entries": [
+    {
+      "byte_size": 38,
+      "captured_at_ms": 1783429128166,
+      "data_mime_type": "text/plain;charset=utf-8",
+      "id": "1783429128165-3",
+      "mime_types": [
+        "text/plain;charset=utf-8",
+        "text/plain",
+        "text/plain;charset=utf-8",
+        "UTF8_STRING",
+        "TEXT",
+        "STRING"
+      ],
+      "payload_path": "/home/rrzt/.config/ai.opencode.desktop/noctalia/clipboard/entries/1783429128165-3.bin",
+      "pinned": false,
+      "text_preview": "https://github.com/h465855hgg/dotfiles"
+    },
+    {
+      "byte_size": 8,
+      "captured_at_ms": 1783428898751,
+      "data_mime_type": "text/plain;charset=utf-8",
+      "id": "1783428898751-2",
+      "mime_types": [
+        "chromium/x-internal-source-rfh-token",
+        "text/plain;charset=utf-8",
+        "text/plain",
+        "text/plain;charset=utf-8",
+        "UTF8_STRING",
+        "STRING",
+        "TEXT",
+        "text/html",
+        "chromium/x-source-url"
+      ],
+      "payload_path": "/home/rrzt/.config/ai.opencode.desktop/noctalia/clipboard/entries/1783428898751-2.bin",
+      "pinned": false,
+      "text_preview": "Noctalia"
+    },
+    {
+      "byte_size": 38,
+      "captured_at_ms": 1783428864571,
+      "data_mime_type": "text/plain;charset=utf-8",
+      "id": "1783428864571-1",
+      "mime_types": [
+        "chromium/x-internal-source-rfh-token",
+        "text/plain;charset=utf-8",
+        "text/plain",
+        "text/plain;charset=utf-8",
+        "UTF8_STRING",
+        "TEXT",
+        "STRING",
+        "chromium/x-source-url"
+      ],
+      "payload_path": "/home/rrzt/.config/ai.opencode.desktop/noctalia/clipboard/entries/1783428864571-1.bin",
+      "pinned": false,
+      "text_preview": "$ noctalia msg config-reload 2>&1  ok "
+    }
+  ]
+}

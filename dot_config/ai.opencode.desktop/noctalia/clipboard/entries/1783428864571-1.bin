@@ -1,0 +1,3 @@
+$ noctalia msg config-reload 2>&1
+
+ok
