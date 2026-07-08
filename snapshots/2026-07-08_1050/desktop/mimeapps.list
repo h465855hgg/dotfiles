@@ -1,0 +1,17 @@
+[Default Applications]
+x-scheme-handler/opencode=ai.opencode.desktop.desktop
+x-scheme-handler/clash=clash-verge.desktop;
+x-scheme-handler/clash-verge=clash-verge.desktop;
+text/html=google-chrome.desktop
+x-scheme-handler/http=google-chrome.desktop
+x-scheme-handler/https=google-chrome.desktop
+x-scheme-handler/about=google-chrome.desktop
+x-scheme-handler/unknown=google-chrome.desktop
+x-scheme-handler/terminal=com.mitchellh.ghostty.desktop
+text/plain=code.desktop
+x-scheme-handler/motrixnext=motrix-next-handler.desktop
+
+[Added Associations]
+x-scheme-handler/clash=clash-verge.desktop;
+x-scheme-handler/clash-verge=clash-verge.desktop;
+text/plain=code.desktop;
