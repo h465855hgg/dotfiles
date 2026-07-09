@@ -1,0 +1,138 @@
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+    . /etc/bashrc
+fi
+
+# User specific environment
+export LANG=zh_CN.UTF-8
+export LC_ALL=zh_CN.UTF-8
+
+if ! [[ "$PATH" =~ "$HOME/.local/bin:$HOME/bin:" ]]; then
+    PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+fi
+export PATH
+
+# ── Auto-completion ──
+if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+fi
+
+# ── History ──
+HISTSIZE=100000
+HISTFILESIZE=200000
+HISTCONTROL=ignoreboth:erasedups
+HISTTIMEFORMAT="%F %T "
+shopt -s histappend
+shopt -s cmdhist
+if [[ $- == *i* ]]; then
+    bind '"\e[A": history-search-backward'
+    bind '"\e[B": history-search-forward'
+    bind '"\C-k": unix-line-discard'
+fi
+
+# ── Better defaults ──
+shopt -s autocd 2>/dev/null
+shopt -s cdspell 2>/dev/null
+shopt -s checkwinsize
+shopt -s globstar 2>/dev/null
+shopt -s extglob
+
+# ── Aliases ──
+alias ls='ls --color=auto -h'
+alias ll='ls --color=auto -alh'
+alias la='ls --color=auto -Ah'
+alias l='ls --color=auto -CFh'
+alias grep='grep --color=auto'
+alias egrep='egrep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias cp='cp -i'
+alias mv='mv -i'
+alias rm='rm -i'
+alias mkdir='mkdir -p'
+alias df='df -h'
+alias free='free -h'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+# ── fzf integration (if installed) ──
+if [[ $- == *i* ]] && command -v fzf &>/dev/null; then
+    eval "$(fzf --bash)"
+fi
+
+# ── zoxide (if installed) ──
+if command -v zoxide &>/dev/null; then
+    eval "$(zoxide init bash)"
+fi
+
+# ── Use eza if available ──
+if command -v eza &>/dev/null; then
+    alias ls='eza --icons -h'
+    alias ll='eza --icons -alh'
+    alias la='eza --icons -Ah'
+    alias lt='eza --icons -T'
+fi
+
+# User specific aliases and functions
+if [ -d ~/.bashrc.d ]; then
+    for rc in ~/.bashrc.d/*; do
+        if [ -f "$rc" ]; then
+            . "$rc"
+        fi
+    done
+fi
+unset rc
+
+__prompt_git_branch() {
+    local branch
+    branch=$(git branch --show-current 2>/dev/null)
+    if [ -n "$branch" ]; then
+        echo -n " ${branch}"
+    fi
+}
+
+__prompt_git_dirty() {
+    git diff --quiet --ignore-submodules HEAD 2>/dev/null || { echo -n "*"; return; }
+    git diff --quiet --cached --ignore-submodules 2>/dev/null || echo -n "+"
+}
+
+__prompt() {
+    local last_exit=$?
+    local col_rs='\[\e[0m\]'
+    local col_time='\[\e[38;5;103m\]'
+    local col_host='\[\e[38;5;141m\]'
+    local col_dir='\[\e[38;5;117m\]'
+    local col_git='\[\e[38;5;215m\]'
+    local col_ok='\[\e[38;5;84m\]'
+    local col_err='\[\e[38;5;203m\]'
+    local col_fade='\[\e[38;5;103m\]'
+
+    local dirty
+    local branch; branch=$(git branch --show-current 2>/dev/null)
+    if [ -n "$branch" ]; then
+        dirty=$([[ -z $(git status --porcelain 2>/dev/null) ]] || echo "*")
+    fi
+
+    PS1=""
+    PS1+="${col_fade}╭─${col_rs} "
+    PS1+="${col_time}\A${col_rs} "
+    PS1+="${col_host}\u@\h${col_rs} "
+    PS1+="${col_dir}\w${col_rs}"
+
+    if [ -n "$branch" ]; then
+        PS1+="${col_git} ${branch} ${dirty}${col_rs}"
+    fi
+
+    PS1+="\n"
+    local sym
+    if [ $last_exit -eq 0 ]; then
+        sym="${col_fade}╰─${col_ok}❯${col_rs}"
+    else
+        sym="${col_fade}╰─${col_err}✗${col_rs}"
+    fi
+    PS1+="${sym} "
+}
+PROMPT_COMMAND=__prompt
+alias ls="eza --icons"
