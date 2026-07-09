@@ -1,0 +1,198 @@
+[audio]
+enable_overdrive = true
+
+[bar.default]
+font_family = "Adwaita Mono"
+shadow = false
+background_opacity = 0.0
+capsule_opacity = 0.0
+
+[dock]
+auto_hide = true
+enabled = true
+launcher_icon = "hand-middle-finger"
+launcher_position = "start"
+position = "right"
+reserve_space = false
+show_dots = true
+
+[location]
+address = "pingxiang,china"
+
+[lockscreen]
+blurred_desktop = true
+
+[lockscreen_widgets]
+enabled = true
+schema_version = 2
+widget_order = [
+    "lockscreen-widget-0000000000000002",
+    "lockscreen-login-box@eDP-1",
+    "lockscreen-widget-0000000000000001",
+    "lockscreen-widget-0000000000000003"
+]
+
+    [lockscreen_widgets.grid]
+    cell_size = 16
+    major_interval = 4
+    visible = true
+
+    [lockscreen_widgets.widget."lockscreen-login-box@eDP-1"]
+    box_height = 70.0
+    box_width = 400.0
+    cx = 853.5
+    cy = 734.5
+    output = "eDP-1"
+    rotation = 0.0
+    type = "login_box"
+
+        [lockscreen_widgets.widget."lockscreen-login-box@eDP-1".settings]
+        background_color = "surface_variant"
+        background_opacity = 0.88
+        background_radius = 12.0
+        input_opacity = 1.0
+        input_radius = 6.0
+        show_caps_lock = true
+        show_keyboard_layout = true
+        show_login_button = true
+        show_password_hint = true
+
+    [lockscreen_widgets.widget.lockscreen-widget-0000000000000001]
+    box_height = 448.0
+    box_width = 784.0
+    cx = 853.5
+    cy = 485.5
+    output = "eDP-1"
+    rotation = 0.0
+    type = "clock"
+
+        [lockscreen_widgets.widget.lockscreen-widget-0000000000000001.settings]
+        background = false
+        center_text = true
+        font_family = "Noto Serif"
+        shadow = false
+
+    [lockscreen_widgets.widget.lockscreen-widget-0000000000000002]
+    box_height = 128.0
+    box_width = 304.0
+    cx = 853.5
+    cy = 629.5
+    output = "eDP-1"
+    rotation = 0.0
+    type = "audio_visualizer"
+
+        [lockscreen_widgets.widget.lockscreen-widget-0000000000000002.settings]
+        background = false
+        bands = 128
+        mirrored = true
+        show_when_idle = false
+
+    [lockscreen_widgets.widget.lockscreen-widget-0000000000000003]
+    box_height = 0.0
+    box_width = 0.0
+    cx = 853.5
+    cy = 629.5
+    output = "eDP-1"
+    rotation = 0.0
+    type = "media_player"
+
+        [lockscreen_widgets.widget.lockscreen-widget-0000000000000003.settings]
+        background = true
+        font_family = "Noto Serif CJK SC"
+        hide_when_no_media = true
+        layout = "horizontal"
+        shadow = false
+
+[osd]
+position = "top_right"
+
+[shell]
+avatar_path = "/home/rrzt/face.jpeg"
+clipboard_history_max_entries = 200
+external_ip_enabled = true
+lang = "zh-Hans"
+launch_apps_as_systemd_services = true
+niri_overview_type_to_launch_enabled = true
+screen_time_enabled = true
+
+    [shell.launcher]
+    app_grid = true
+    session_search = true
+
+    [shell.panel]
+    open_near_click_control_center = true
+
+    [shell.screen_corners]
+    size = 64
+
+    [shell.screenshot]
+    directory = "/home/rrzt/Pictures/Screenshots"
+
+[theme]
+mode = "dark"
+source = "wallpaper"
+wallpaper_scheme = "vibrant"
+
+[wallpaper]
+directory = "/home/rrzt/wallpapers"
+
+    [wallpaper.default]
+    path = "/home/rrzt/wallpapers/pex_0000_1cb090a8.jpeg"
+
+    [wallpaper.last]
+    path = "/home/rrzt/wallpapers/pex_0000_1cb090a8.jpeg"
+
+    [wallpaper.monitors.eDP-1]
+    path = "/home/rrzt/wallpapers/pex_0000_1cb090a8.jpeg"
+
+[widget.battery]
+enabled = false
+
+[widget.bluetooth]
+enabled = false
+
+[widget.brightness]
+capsule = true
+enabled = false
+scroll_step = 1
+
+[widget.clipboard]
+enabled = false
+
+[widget.clock]
+capsule = true
+font_family = "Noto Sans CJK SC"
+
+[widget.control-center]
+capsule = true
+
+[widget.launcher]
+capsule = true
+
+[widget.media]
+capsule = true
+hide_when_no_media = true
+title_scroll = "on_hover"
+
+[widget.network]
+enabled = false
+
+[widget.notifications]
+capsule = true
+
+[widget.session]
+capsule = true
+
+[widget.tray]
+capsule = true
+drawer = true
+match_adjacent_spacing = true
+
+[widget.volume]
+capsule = true
+
+[widget.wallpaper]
+capsule = true
+
+[widget.workspaces]
+capsule = true
