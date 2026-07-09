@@ -1,0 +1,54 @@
+include "default-base.kdl"
+
+spawn-at-startup "/home/rrzt/.local/bin/noctalia-watchdog"
+window-rule {
+  geometry-corner-radius 12
+  clip-to-geometry true
+}
+
+window-rule {
+  match app-id="dev.noctalia.Noctalia"
+  open-floating true
+  default-column-width { fixed 1080; }
+  default-window-height { fixed 920; }
+}
+
+debug {
+  honor-xdg-activation-with-invalid-serial
+}
+
+binds {
+    Mod+Return { spawn "ghostty"; }
+    Mod+T { spawn "ghostty"; }
+
+    Mod+Space { spawn-sh "noctalia msg panel-toggle launcher"; }
+    Mod+S { spawn-sh "noctalia msg panel-toggle control-center"; }
+    Mod+V { spawn-sh "noctalia msg panel-toggle clipboard"; }
+    Mod+Comma { spawn-sh "noctalia msg settings-toggle"; }
+
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "noctalia msg volume-up"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "noctalia msg volume-down"; }
+    XF86AudioMute        allow-when-locked=true { spawn-sh "noctalia msg volume-mute"; }
+
+    XF86MonBrightnessUp   allow-when-locked=true { spawn-sh "noctalia msg brightness-up"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn-sh "noctalia msg brightness-down"; }
+
+}
+
+layer-rule {
+    match namespace="^noctalia-wallpaper*"
+    place-within-backdrop true
+}
+
+layer-rule {
+    match namespace="^noctalia-bar-default$"
+    geometry-corner-radius 0
+    shadow { off; }
+    background-effect {
+        blur false
+    }
+}
+
+overview {
+    backdrop-color "#4c566a90"
+}
