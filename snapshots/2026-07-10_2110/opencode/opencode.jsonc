@@ -1,0 +1,33 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "disabled_providers": [
+    "bigmodel",
+    "figure"
+  ],
+  "provider": {
+    "bigmodel": {
+      "name": "bigmodel",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "https://open.bigmodel.cn/api/coding/paas/v4"
+      },
+      "models": {
+        "gml-5.2": {
+          "name": "GML-5.2"
+        }
+      }
+    },
+    "figure": {
+      "name": "figuer",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "https://figure.jiangsuocean.cn/v1"
+      },
+      "models": {
+        "glm-5.2": {
+          "name": "glm5.2"
+        }
+      }
+    }
+  }
+}
