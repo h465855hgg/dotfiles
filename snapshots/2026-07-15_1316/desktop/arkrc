@@ -1,0 +1,13 @@
+[ExtractDialog]
+DirHistory[$e]=$HOME/下载/Midnight.Exhibitionist.v1.0/,$HOME/下载/
+
+[Extraction]
+closeAfterExtraction=true
+openDestinationFolderAfterExtraction=true
+
+[General]
+LockSidebar=true
+ShowSidebar=true
+
+[MainWindow]
+StatusBar=Disabled
