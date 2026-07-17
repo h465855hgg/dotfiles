@@ -1,0 +1,27 @@
+[Default Applications]
+x-scheme-handler/opencode=ai.opencode.desktop.desktop
+x-scheme-handler/clash=clash-verge.desktop;
+x-scheme-handler/clash-verge=clash-verge.desktop;
+text/html=google-chrome.desktop
+x-scheme-handler/http=google-chrome.desktop
+x-scheme-handler/https=google-chrome.desktop
+x-scheme-handler/about=google-chrome.desktop
+x-scheme-handler/unknown=google-chrome.desktop
+x-scheme-handler/terminal=com.mitchellh.ghostty.desktop
+text/plain=code.desktop
+x-scheme-handler/motrixnext=motrix-next-handler.desktop
+x-scheme-handler/jetbrains=jetbrainsd.desktop
+x-scheme-handler/github-app=github-handler.desktop
+x-scheme-handler/ghapp=github-handler.desktop
+x-scheme-handler/gh=github-handler.desktop
+text/markdown=md.obsidian.Obsidian.desktop
+application/vnd.rar=org.kde.ark.desktop
+application/x-7z-compressed=org.kde.ark.desktop
+
+[Added Associations]
+x-scheme-handler/clash=clash-verge.desktop;
+x-scheme-handler/clash-verge=clash-verge.desktop;
+text/plain=code.desktop;
+text/markdown=com.github.phase1geo.minder.desktop;md.obsidian.Obsidian.desktop;
+application/vnd.rar=org.kde.ark.desktop;
+application/x-7z-compressed=org.kde.ark.desktop;

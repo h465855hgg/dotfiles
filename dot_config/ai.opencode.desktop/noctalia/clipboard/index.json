@@ -1,6 +1,31 @@
 {
   "entries": [
     {
+      "byte_size": 52,
+      "captured_at_ms": 1784269285939,
+      "data_mime_type": "text/plain;charset=utf-8",
+      "id": "1784269285939-2",
+      "mime_types": [
+        "text/plain;charset=utf-8",
+        "text/plain"
+      ],
+      "payload_path": "/home/rrzt/.config/ai.opencode.desktop/noctalia/clipboard/entries/1784269285939-2.bin",
+      "pinned": false,
+      "text_preview": "/home/rrzt/下载/歌词插件-未完成歌词获取"
+    },
+    {
+      "byte_size": 244,
+      "captured_at_ms": 1784268996275,
+      "data_mime_type": "UTF8_STRING",
+      "id": "1784268996275-1",
+      "mime_types": [
+        "UTF8_STRING"
+      ],
+      "payload_path": "/home/rrzt/.config/ai.opencode.desktop/noctalia/clipboard/entries/1784268996275-1.bin",
+      "pinned": false,
+      "text_preview": "更新我的noctalia v5 到最新的a336b7d https://github.com/noctalia-dev/noctalia/commit/a336b7d1b9d5175af3dd222a4571fe3e51427211 还有最新的https://github.com/noctalia-dev/noctalia-greeter/com"
+    },
+    {
       "byte_size": 38,
       "captured_at_ms": 1783429128166,
       "data_mime_type": "text/plain;charset=utf-8",

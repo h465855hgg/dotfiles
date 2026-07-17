@@ -1,0 +1,327 @@
+#!/usr/bin/env python3
+import datetime
+import shutil
+import subprocess
+import threading
+from pathlib import Path
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+from gi.repository import GLib, Gtk
+
+
+HOME = Path.home()
+CHEZMOI_DIR = HOME / ".local" / "share" / "chezmoi"
+SNAPSHOT_DIR = CHEZMOI_DIR / "snapshots"
+REMOTE_URL = "https://github.com/h465855hgg/dotfiles.git"
+MAX_SNAPSHOTS = 10
+MIN_FREE_BYTES = 512 * 1024 * 1024
+
+SNAPSHOT_PATHS = {
+    "niri/config.kdl": HOME / ".config/niri/config.kdl",
+    "niri/default-base.kdl": HOME / ".config/niri/default-base.kdl",
+    "ghostty/config": HOME / ".config/ghostty/config",
+    "ghostty/config.ghostty": HOME / ".config/ghostty/config.ghostty",
+    "noctalia/settings.toml": HOME / ".config/ai.opencode.desktop/noctalia/settings.toml",
+    "noctalia/recently_used.json": HOME / ".config/ai.opencode.desktop/noctalia/recently_used.json",
+    "noctalia/screen_time.json": HOME / ".config/ai.opencode.desktop/noctalia/screen_time.json",
+    "noctalia/usage_counts.json": HOME / ".config/ai.opencode.desktop/noctalia/usage_counts.json",
+    "shell/bashrc": HOME / ".bashrc",
+    "shell/bash_profile": HOME / ".bash_profile",
+    "shell/bash_logout": HOME / ".bash_logout",
+    "shell/gitconfig": HOME / ".gitconfig",
+    "vscode/settings.json": HOME / ".config/Code/User/settings.json",
+    "vscode/chatLanguageModels.json": HOME / ".config/Code/User/chatLanguageModels.json",
+    "vscode/argv.json": HOME / ".vscode/argv.json",
+    "opencode/opencode.jsonc": HOME / ".config/opencode/opencode.jsonc",
+    "desktop/kdeglobals": HOME / ".config/kdeglobals",
+    "desktop/user-dirs.dirs": HOME / ".config/user-dirs.dirs",
+    "desktop/user-dirs.locale": HOME / ".config/user-dirs.locale",
+    "desktop/QtProject.conf": HOME / ".config/QtProject.conf",
+    "desktop/arkrc": HOME / ".config/arkrc",
+    "desktop/mimeapps.list": HOME / ".config/mimeapps.list",
+    "fcitx5/profile": HOME / ".config/fcitx5/profile",
+    "autostart/Clash Verge.desktop": HOME / ".config/autostart/Clash Verge.desktop",
+    "autostart/fcitx5.desktop": HOME / ".config/autostart/fcitx5.desktop",
+    "autostart/MotrixNext.desktop": HOME / ".config/autostart/MotrixNext.desktop",
+    "system/environment.d/fcitx5.conf": HOME / ".config/environment.d/fcitx5.conf",
+    "system/environment.d/locale.conf": HOME / ".config/environment.d/locale.conf",
+    "system/wireplumber/default-routes": HOME / ".local/state/wireplumber/default-routes",
+    "system/wireplumber/stream-properties": HOME / ".local/state/wireplumber/stream-properties",
+    "firefox/profiles.ini": HOME / ".config/mozilla/firefox/profiles.ini",
+    "firefox/installs.ini": HOME / ".config/mozilla/firefox/installs.ini",
+    "scripts/noctalia-watchdog": HOME / ".local/bin/noctalia-watchdog",
+    "scripts/dotbackup-gui": HOME / ".local/bin/dotbackup-gui",
+    "sudoers/noctalia": Path("/etc/sudoers.d/noctalia"),
+}
+
+
+class BackupError(RuntimeError):
+    pass
+
+
+def run(args, cwd=None, check=True):
+    result = subprocess.run(
+        [str(arg) for arg in args],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        timeout=300,
+    )
+    if check and result.returncode != 0:
+        detail = result.stderr.strip() or result.stdout.strip() or "未知错误"
+        raise BackupError(f"{' '.join(map(str, args))}: {detail}")
+    return result
+
+
+def format_size(size):
+    value = float(size)
+    for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
+        if value < 1024 or unit == "TiB":
+            return f"{value:.1f} {unit}"
+        value /= 1024
+
+
+def disk_summary():
+    usage = shutil.disk_usage(HOME)
+    percent = usage.used / usage.total * 100
+    return f"根分区：已用 {percent:.1f}% · 可用 {format_size(usage.free)}"
+
+
+def list_snapshots():
+    if not SNAPSHOT_DIR.exists():
+        return []
+    return sorted((path.name for path in SNAPSHOT_DIR.iterdir() if path.is_dir()), reverse=True)
+
+
+def ensure_ready():
+    if not CHEZMOI_DIR.joinpath(".git").is_dir():
+        raise BackupError(f"chezmoi 仓库不存在：{CHEZMOI_DIR}")
+    if shutil.disk_usage(HOME).free < MIN_FREE_BYTES:
+        raise BackupError("可用空间低于 512 MiB，请先清理磁盘")
+    if shutil.which("chezmoi") is None:
+        raise BackupError("找不到 chezmoi")
+    if shutil.which("gh") is None:
+        raise BackupError("找不到 GitHub CLI (gh)")
+    run(["gh", "auth", "status"])
+    run(["git", "remote", "set-url", "origin", REMOTE_URL], cwd=CHEZMOI_DIR)
+
+
+def copy_file(src, dest):
+    source_is_system = str(src).startswith("/etc/")
+    destination_is_system = str(dest).startswith("/etc/")
+    if destination_is_system:
+        result = run(["sudo", "-n", "mkdir", "-p", "--", dest.parent], check=False)
+        if result.returncode == 0:
+            result = run(["sudo", "-n", "cp", "--", src, dest], check=False)
+        if result.returncode != 0:
+            return False
+    elif source_is_system:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        result = run(["sudo", "-n", "cp", "--", src, dest], check=False)
+        if result.returncode != 0:
+            return False
+    else:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest)
+    return True
+
+
+def prune_snapshots():
+    snapshots = list_snapshots()
+    for name in snapshots[MAX_SNAPSHOTS:]:
+        shutil.rmtree(SNAPSHOT_DIR / name)
+
+
+def create_backup(progress):
+    ensure_ready()
+    progress("正在更新 chezmoi 源文件...")
+    run(["chezmoi", "re-add"])
+
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    snapshot = SNAPSHOT_DIR / timestamp
+    snapshot.mkdir(parents=True)
+    skipped = []
+    committed = False
+    try:
+        for relative, source in SNAPSHOT_PATHS.items():
+            if source.is_file() and not copy_file(source, snapshot / relative):
+                skipped.append(str(source))
+        prune_snapshots()
+
+        progress("正在提交快照...")
+        run(["git", "add", "-A"], cwd=CHEZMOI_DIR)
+        changed = run(["git", "diff", "--cached", "--quiet"], cwd=CHEZMOI_DIR, check=False)
+        if changed.returncode == 0:
+            shutil.rmtree(snapshot, ignore_errors=True)
+            return "配置没有变化，无需创建新备份"
+        run(["git", "commit", "-m", f"Snapshot {timestamp}"], cwd=CHEZMOI_DIR)
+        committed = True
+
+        progress("正在推送到 GitHub...")
+        run(["git", "push", "origin", "main"], cwd=CHEZMOI_DIR)
+    except Exception:
+        if not committed:
+            run(["git", "reset"], cwd=CHEZMOI_DIR, check=False)
+            if snapshot.exists():
+                shutil.rmtree(snapshot, ignore_errors=True)
+        raise
+
+    suffix = f"；跳过 {len(skipped)} 个需 sudo 的文件" if skipped else ""
+    return f"备份成功：{timestamp}{suffix}"
+
+
+def restore_backup(snapshot_name, progress):
+    ensure_ready()
+    progress("正在同步远程仓库...")
+    run(["git", "pull", "--ff-only", "origin", "main"], cwd=CHEZMOI_DIR)
+
+    snapshot = SNAPSHOT_DIR / snapshot_name
+    if not snapshot.is_dir() or snapshot.parent != SNAPSHOT_DIR:
+        raise BackupError("快照不存在")
+
+    skipped = []
+    progress("正在恢复配置文件...")
+    for relative, destination in SNAPSHOT_PATHS.items():
+        source = snapshot / relative
+        if source.is_file() and not copy_file(source, destination):
+            skipped.append(str(destination))
+    run(["chezmoi", "apply", "--force"])
+
+    suffix = f"；跳过 {len(skipped)} 个需 sudo 的文件" if skipped else ""
+    return f"已从 {snapshot_name} 恢复{suffix}"
+
+
+class DotBackupWindow(Gtk.ApplicationWindow):
+    def __init__(self, app):
+        super().__init__(application=app, title="DotBackup - 配置备份管理")
+        self.set_default_size(600, 430)
+
+        main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        main.set_margin_top(18)
+        main.set_margin_bottom(18)
+        main.set_margin_start(18)
+        main.set_margin_end(18)
+        self.set_child(main)
+
+        title = Gtk.Label(halign=Gtk.Align.START)
+        title.set_markup("<b><big>DotBackup</big></b>")
+        main.append(title)
+
+        self.disk_label = Gtk.Label(halign=Gtk.Align.START)
+        self.disk_label.add_css_class("dim-label")
+        main.append(self.disk_label)
+
+        auth_label = Gtk.Label(label="认证：GitHub CLI 系统 keyring", halign=Gtk.Align.START)
+        auth_label.add_css_class("dim-label")
+        main.append(auth_label)
+
+        main.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+
+        self.backup_button = Gtk.Button(label="备份当前配置")
+        self.backup_button.add_css_class("suggested-action")
+        self.backup_button.connect("clicked", self.on_backup)
+        main.append(self.backup_button)
+
+        restore_title = Gtk.Label(halign=Gtk.Align.START)
+        restore_title.set_markup("<b>恢复快照</b>")
+        main.append(restore_title)
+
+        restore_row = Gtk.Box(spacing=8)
+        self.snapshot_combo = Gtk.DropDown.new_from_strings(["(无快照)"])
+        self.snapshot_combo.set_hexpand(True)
+        restore_row.append(self.snapshot_combo)
+
+        self.restore_button = Gtk.Button(label="恢复")
+        self.restore_button.add_css_class("destructive-action")
+        self.restore_button.connect("clicked", self.on_restore)
+        restore_row.append(self.restore_button)
+        main.append(restore_row)
+
+        self.refresh_button = Gtk.Button(label="刷新状态")
+        self.refresh_button.connect("clicked", self.on_refresh)
+        main.append(self.refresh_button)
+
+        main.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        self.status_label = Gtk.Label(label="就绪", halign=Gtk.Align.START, wrap=True)
+        self.status_label.add_css_class("dim-label")
+        main.append(self.status_label)
+        self.on_refresh()
+
+    def set_busy(self, busy):
+        self.backup_button.set_sensitive(not busy)
+        self.restore_button.set_sensitive(not busy)
+        self.refresh_button.set_sensitive(not busy)
+
+    def set_status(self, message):
+        self.status_label.set_text(message)
+        return False
+
+    def run_task(self, task):
+        self.set_busy(True)
+
+        def worker():
+            try:
+                message = task(lambda text: GLib.idle_add(self.set_status, text))
+                GLib.idle_add(self.task_finished, message, False)
+            except Exception as exc:
+                GLib.idle_add(self.task_finished, f"错误：{exc}", True)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def task_finished(self, message, failed):
+        self.set_busy(False)
+        self.set_status(message)
+        self.on_refresh(keep_status=True)
+        if failed:
+            self.status_label.add_css_class("error")
+        else:
+            self.status_label.remove_css_class("error")
+        return False
+
+    def on_refresh(self, button=None, keep_status=False):
+        snapshots = list_snapshots()
+        self.snapshot_combo.set_model(Gtk.StringList.new(snapshots or ["(无快照)"]))
+        self.restore_button.set_sensitive(bool(snapshots))
+        self.disk_label.set_text(disk_summary())
+        if not keep_status:
+            self.set_status(f"保留策略：最近 {MAX_SNAPSHOTS} 个快照")
+
+    def on_backup(self, button):
+        self.run_task(create_backup)
+
+    def on_restore(self, button):
+        selected = self.snapshot_combo.get_selected_item()
+        if selected is None or selected.get_string() == "(无快照)":
+            return
+        name = selected.get_string()
+
+        dialog = Gtk.MessageDialog(
+            transient_for=self,
+            modal=True,
+            message_type=Gtk.MessageType.WARNING,
+            buttons=Gtk.ButtonsType.CANCEL,
+            text=f"确定恢复快照 {name}？",
+        )
+        dialog.format_secondary_text("当前配置将被该快照覆盖。")
+        dialog.add_button("恢复", Gtk.ResponseType.ACCEPT)
+        dialog.connect("response", self.on_restore_response, name)
+        dialog.present()
+
+    def on_restore_response(self, dialog, response, name):
+        dialog.destroy()
+        if response == Gtk.ResponseType.ACCEPT:
+            self.run_task(lambda progress: restore_backup(name, progress))
+
+
+class DotBackupApp(Gtk.Application):
+    def __init__(self):
+        super().__init__(application_id="com.dotbackup.app")
+
+    def do_activate(self):
+        DotBackupWindow(self).present()
+
+
+if __name__ == "__main__":
+    DotBackupApp().run()

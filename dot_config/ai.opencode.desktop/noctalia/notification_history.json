@@ -1,5 +1,5 @@
 {
-  "change_serial": 4,
+  "change_serial": 6,
   "entries": [
     {
       "active": false,
@@ -22,7 +22,7 @@
           "channels": 4,
           "has_alpha": true,
           "height": 96,
-          "image_file": "i_b2d62655ee7aa3e5932c76f3ad82b001.webp",
+          "image_file": "i_27f79c5bef9ac8f4f66a03c0612e7bda.webp",
           "row_stride": 384,
           "width": 96
         },
@@ -55,7 +55,7 @@
           "channels": 4,
           "has_alpha": true,
           "height": 96,
-          "image_file": "i_b2d62655ee7aa3e5932c76f3ad82b001.webp",
+          "image_file": "i_27f79c5bef9ac8f4f66a03c0612e7bda.webp",
           "row_stride": 384,
           "width": 96
         },
@@ -66,8 +66,41 @@
         "urgency": "normal"
       },
       "seen": false
+    },
+    {
+      "active": false,
+      "close_reason": "expired",
+      "event_serial": 6,
+      "notification": {
+        "actions": [
+          "default",
+          "View"
+        ],
+        "app_name": "OpenCode",
+        "body": "更新 Noctalia v5 和 Greeter 到指定提交",
+        "category": null,
+        "desktop_entry": "ai.opencode.desktop",
+        "expiry_wall_ms": 1784269047007,
+        "icon": null,
+        "id": 4,
+        "image_data": {
+          "bits_per_sample": 8,
+          "channels": 4,
+          "has_alpha": true,
+          "height": 96,
+          "image_file": "i_b2d62655ee7aa3e5932c76f3ad82b001.webp",
+          "row_stride": 384,
+          "width": 96
+        },
+        "origin": "external",
+        "received_wall_ms": 1784269041007,
+        "summary": "回复已就绪",
+        "timeout": 6000,
+        "urgency": "normal"
+      },
+      "seen": false
     }
   ],
-  "next_id": 4,
+  "next_id": 5,
   "version": 2
 }
