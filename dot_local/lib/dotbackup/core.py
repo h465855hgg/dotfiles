@@ -265,8 +265,7 @@ class DotBackup:
             ("scripts/dotbackup-gui", self.home / ".local/bin/dotbackup-gui"),
         ):
             if path.is_file() and not path.is_symlink():
-                validator = "json" if path.suffix == ".json" else "none"
-                entries.append(Entry(key, path, path, False, validator))
+                entries.append(Entry(key, path, path))
         deduplicated = {}
         for entry in entries:
             deduplicated[entry.destination.resolve()] = entry

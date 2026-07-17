@@ -79,6 +79,14 @@ class DotBackupTests(unittest.TestCase):
         self.assertEqual(metadata["profile"], "full-local")
         self.assertEqual(metadata["contains_sensitive_data"], "true")
 
+    def test_vscode_argv_jsonc_is_not_strict_json(self):
+        argv = self.home / ".vscode/argv.json"
+        argv.parent.mkdir(parents=True)
+        argv.write_text('// comment\n{"locale": "zh-cn"}\n')
+        entries, _metadata = self.app.full_entries()
+        entry = next(item for item in entries if item.destination == argv)
+        self.assertEqual(entry.validator, "none")
+
     def test_archive_snapshot_round_trip(self):
         entries, metadata = self.app.entries()
         snapshot = self.app._create_snapshot(self.app.local_snapshot_dir, "test", entries, metadata)
