@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+import threading
+from pathlib import Path
+import sys
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+from gi.repository import GLib, Gtk
+
+sys.path.insert(0, str(Path.home() / ".local/lib"))
+
+from dotbackup import DotBackup
+
+
+class DotBackupWindow(Gtk.ApplicationWindow):
+    def __init__(self, app):
+        super().__init__(application=app, title="DotBackup")
+        self.backend = DotBackup()
+        self.snapshots = []
+        self.set_default_size(680, 460)
+
+        main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        main.set_margin_top(18)
+        main.set_margin_bottom(18)
+        main.set_margin_start(18)
+        main.set_margin_end(18)
+        self.set_child(main)
+
+        title = Gtk.Label(halign=Gtk.Align.START)
+        title.set_markup("<b><big>DotBackup</big></b>")
+        main.append(title)
+
+        self.summary = Gtk.Label(halign=Gtk.Align.START, wrap=True, selectable=True)
+        self.summary.add_css_class("dim-label")
+        main.append(self.summary)
+
+        main.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+
+        actions = Gtk.Box(spacing=8)
+        self.backup_button = Gtk.Button(label="公开配置备份并推送")
+        self.backup_button.add_css_class("suggested-action")
+        self.backup_button.connect("clicked", self.on_backup)
+        actions.append(self.backup_button)
+
+        self.local_button = Gtk.Button(label="完整本地备份")
+        self.local_button.connect("clicked", self.on_local_backup)
+        actions.append(self.local_button)
+
+        self.remote_button = Gtk.Button(label="完整备份到私有仓库")
+        self.remote_button.connect("clicked", self.on_remote_backup)
+        actions.append(self.remote_button)
+
+        self.verify_button = Gtk.Button(label="验证快照")
+        self.verify_button.connect("clicked", self.on_verify)
+        actions.append(self.verify_button)
+        main.append(actions)
+
+        restore_title = Gtk.Label(halign=Gtk.Align.START)
+        restore_title.set_markup("<b>事务式恢复</b>")
+        main.append(restore_title)
+
+        restore_row = Gtk.Box(spacing=8)
+        self.snapshot_combo = Gtk.DropDown.new_from_strings(["(无快照)"])
+        self.snapshot_combo.set_hexpand(True)
+        restore_row.append(self.snapshot_combo)
+        self.restore_button = Gtk.Button(label="恢复")
+        self.restore_button.add_css_class("destructive-action")
+        self.restore_button.connect("clicked", self.on_restore)
+        restore_row.append(self.restore_button)
+        main.append(restore_row)
+
+        note = Gtk.Label(
+            label="完整本地备份包含 Noctalia 状态、剪贴板及其他敏感数据，不会推送 GitHub。恢复前会自动创建回滚点。",
+            halign=Gtk.Align.START,
+            wrap=True,
+        )
+        note.add_css_class("dim-label")
+        main.append(note)
+
+        main.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        self.status = Gtk.Label(label="就绪", halign=Gtk.Align.START, wrap=True, selectable=True)
+        main.append(self.status)
+
+        self.refresh()
+
+    def set_busy(self, busy):
+        for button in (self.backup_button, self.local_button, self.remote_button, self.verify_button, self.restore_button):
+            button.set_sensitive(not busy)
+
+    def set_status(self, message):
+        self.status.set_text(message)
+        return False
+
+    def run_task(self, task):
+        self.set_busy(True)
+
+        def worker():
+            try:
+                result = task(lambda text: GLib.idle_add(self.set_status, text))
+                GLib.idle_add(self.task_finished, str(result), False)
+            except Exception as exc:
+                GLib.idle_add(self.task_finished, f"错误：{exc}", True)
+
+        threading.Thread(target=worker, daemon=False).start()
+
+    def task_finished(self, message, failed):
+        self.set_busy(False)
+        self.set_status(message)
+        self.status.remove_css_class("error")
+        if failed:
+            self.status.add_css_class("error")
+        self.refresh(keep_status=True)
+        return False
+
+    def refresh(self, keep_status=False):
+        try:
+            info = self.backend.status()
+            self.summary.set_text(
+                f"Noctalia: {info['noctalia_root']} ({info['noctalia_evidence']})\n"
+                f"远程快照: {info['snapshots']} · 本地快照: {info['local_snapshots']} · 回滚点: {info['rollbacks']} · "
+                f"运行中: {'是' if info['noctalia_running'] else '否'}"
+            )
+            self.snapshots = self.backend.list_snapshots(include_rollbacks=True)
+            labels = [path.name for path in self.snapshots] or ["(无快照)"]
+            self.snapshot_combo.set_model(Gtk.StringList.new(labels))
+            has_snapshot = bool(self.snapshots)
+            self.restore_button.set_sensitive(has_snapshot)
+            self.verify_button.set_sensitive(has_snapshot)
+            if not keep_status:
+                self.set_status("就绪")
+        except Exception as exc:
+            self.summary.set_text(f"状态检查失败：{exc}")
+
+    def selected_snapshot(self):
+        index = self.snapshot_combo.get_selected()
+        if index >= len(self.snapshots):
+            return None
+        return self.snapshots[index]
+
+    def on_backup(self, _button):
+        self.run_task(lambda progress: self.backend.create_backup(progress, publish=True))
+
+    def on_local_backup(self, _button):
+        self.run_task(lambda progress: self.backend.create_backup(progress, publish=False))
+
+    def on_remote_backup(self, _button):
+        self.run_task(self.backend.upload_full_backup)
+
+    def on_verify(self, _button):
+        snapshot = self.selected_snapshot()
+        if snapshot:
+            self.run_task(lambda _progress: f"验证通过：{self.backend.verify_snapshot(snapshot)['id']}")
+
+    def on_restore(self, _button):
+        snapshot = self.selected_snapshot()
+        if snapshot is None:
+            return
+        dialog = Gtk.MessageDialog(
+            transient_for=self,
+            modal=True,
+            message_type=Gtk.MessageType.WARNING,
+            buttons=Gtk.ButtonsType.CANCEL,
+            text=f"恢复快照 {snapshot.name}？",
+        )
+        dialog.format_secondary_text("DotBackup 会先创建回滚快照。任何恢复或启动失败都会自动回滚。")
+        dialog.add_button("创建回滚点并恢复", Gtk.ResponseType.ACCEPT)
+        dialog.connect("response", self.on_restore_response, snapshot)
+        dialog.present()
+
+    def on_restore_response(self, dialog, response, snapshot):
+        dialog.destroy()
+        if response == Gtk.ResponseType.ACCEPT:
+            self.run_task(lambda progress: self.backend.restore_snapshot(snapshot, progress))
+
+
+class DotBackupApp(Gtk.Application):
+    def __init__(self):
+        super().__init__(application_id="com.dotbackup.app")
+
+    def do_activate(self):
+        DotBackupWindow(self).present()
+
+
+if __name__ == "__main__":
+    DotBackupApp().run()

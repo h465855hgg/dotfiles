@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path.home() / ".local/lib"))
+
+from dotbackup import BackupError, DotBackup
+
+
+def progress(message: str) -> None:
+    print(message, file=sys.stderr, flush=True)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Safe transactional dotfiles backup manager")
+    sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("status")
+    sub.add_parser("list")
+    backup = sub.add_parser("backup")
+    backup.add_argument(
+        "--local-only",
+        action="store_true",
+        help="create a complete local snapshot including sensitive state; never commit or push it",
+    )
+    verify = sub.add_parser("verify")
+    verify.add_argument("snapshot")
+    restore = sub.add_parser("restore")
+    restore.add_argument("snapshot")
+    sub.add_parser("remote-backup")
+    sub.add_parser("remote-list")
+    remote_restore = sub.add_parser("remote-restore")
+    remote_restore.add_argument("tag")
+    args = parser.parse_args()
+
+    app = DotBackup()
+    try:
+        if args.command == "status":
+            print(json.dumps(app.status(), ensure_ascii=False, indent=2))
+        elif args.command == "list":
+            for path in app.list_snapshots(include_rollbacks=True):
+                print(path)
+        elif args.command == "backup":
+            print(app.create_backup(progress, publish=not args.local_only))
+        elif args.command == "verify":
+            manifest = app.verify_snapshot(Path(args.snapshot))
+            print(json.dumps(manifest, ensure_ascii=False, indent=2))
+        elif args.command == "restore":
+            rollback = app.restore_snapshot(Path(args.snapshot), progress)
+            print(f"restore complete; rollback snapshot: {rollback}")
+        elif args.command == "remote-backup":
+            print(app.upload_full_backup(progress))
+        elif args.command == "remote-list":
+            print(json.dumps(app.list_remote_backups(), ensure_ascii=False, indent=2))
+        elif args.command == "remote-restore":
+            snapshot = app.download_remote_backup(args.tag, progress)
+            rollback = app.restore_snapshot(snapshot, progress)
+            print(f"remote restore complete; rollback snapshot: {rollback}")
+    except BackupError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
