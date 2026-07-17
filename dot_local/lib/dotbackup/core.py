@@ -116,6 +116,10 @@ class DotBackup:
             if shutil.which("git") is None:
                 raise BackupError("git is not available")
 
+    def ensure_private_state(self) -> None:
+        self.state_dir.mkdir(parents=True, exist_ok=True)
+        os.chmod(self.state_dir, 0o700)
+
     def resolve_noctalia_root(self) -> tuple[Path, str]:
         override = os.environ.get("DOTBACKUP_NOCTALIA_ROOT")
         if override:
@@ -476,6 +480,7 @@ class DotBackup:
             raise BackupError(f"refusing to upload sensitive data to non-private repository: {self.backup_repo}")
 
     def archive_snapshot(self, snapshot: Path) -> tuple[Path, str]:
+        self.ensure_private_state()
         archive_dir = self.state_dir / "upload"
         archive_dir.mkdir(parents=True, exist_ok=True)
         os.chmod(archive_dir, 0o700)
@@ -546,8 +551,7 @@ class DotBackup:
 
     def download_remote_backup(self, tag: str, progress: Progress = _default_progress) -> Path:
         self.ensure_private_backup_repo()
-        self.state_dir.mkdir(parents=True, exist_ok=True)
-        os.chmod(self.state_dir, 0o700)
+        self.ensure_private_state()
         download_dir = Path(tempfile.mkdtemp(prefix="dotbackup-download-", dir=self.state_dir))
         os.chmod(download_dir, 0o700)
         try:
@@ -611,6 +615,7 @@ class DotBackup:
                 metadata["profile"] = "public-config"
                 metadata["contains_sensitive_data"] = "false"
             else:
+                self.ensure_private_state()
                 entries, metadata = self.full_entries()
             progress(f"Using Noctalia state: {metadata['noctalia_root']}")
             was_running = self.stop_noctalia()

@@ -95,6 +95,10 @@ class DotBackupTests(unittest.TestCase):
         self.assertEqual(self.app.sha256(archive), digest)
         self.assertEqual(archive.stat().st_mode & 0o777, 0o600)
 
+    def test_private_state_permissions(self):
+        self.app.ensure_private_state()
+        self.assertEqual(self.app.state_dir.stat().st_mode & 0o777, 0o700)
+
     def test_corrupt_snapshot_is_rejected(self):
         entries, metadata = self.app.entries()
         snapshot = self.app._create_snapshot(self.repo / "snapshots", "test", entries, metadata)
